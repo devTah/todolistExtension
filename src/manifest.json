@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "todolist",
+  "version": "1.0.0",
+  "description": "Todo list extension",
+  "icons": {
+    "16": "./logo.png",
+    "32": "./logo.png",
+    "64": "./logo.png",
+    "128": "./logo.png"
+  },
+  "background": {
+    "scripts": [
+      "./background.js"
+    ]
+  },
+  "options_page": "./options.html",
+  "browser_action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "tabs",
+    "<all_urls>"
+  ]
+}
