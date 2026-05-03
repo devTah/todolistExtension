@@ -1,5 +1,6 @@
 /**@jsx jsx */
 import { jsx, css } from "@emotion/react";
+import React, { useCallback } from "react";
 import { BG_IMAGE } from "../../common/constant";
 
 // let color = {
@@ -10,8 +11,7 @@ import { BG_IMAGE } from "../../common/constant";
 //   black: "#000",
 // };
 
-function Checkbox(props) {
-  const { value, ...rest } = props;
+function Checkbox({ value, label, id, checkBoxData, onCheck, ...rest }) {
   const styles = {
     textareaContainer: css`
       [type="checkbox"],
@@ -256,18 +256,33 @@ function Checkbox(props) {
     `,
   };
 
+  const handleChange = useCallback(
+    (event) => {
+      const { value } = event.target;
+      if (onCheck) onCheck(value);
+    },
+    [onCheck],
+  );
+    console.log(checkBoxData);
   return (
-    <div css={styles.textareaContainer}>
-      <ul>
-        <input
-          id="checkbox2"
-          name="checkbox"
-          type="checkbox"
-        //   value={value} 
-          {...rest}
-        />
-        <label for="checkbox2">Choice A</label>
-      </ul>
+    <div css={styles.textareaContainer} key={id}>
+      {/* item = {key: ..., value: ...} */}
+      {(checkBoxData?.data ?? []).map((item, idx) => {
+        return (
+          <React.Fragment key={item + idx}>
+            <input
+              id={item + idx}
+              name="checkbox"
+              type="checkbox"
+              onChange={handleChange}
+              value={item}
+              // checked={checkBoxData?.checkList.includes(item)}
+              {...rest}
+            />
+            <label htmlFor={item + idx}></label>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

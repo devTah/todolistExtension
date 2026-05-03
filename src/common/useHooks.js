@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // Hook
 export function useDebounce(value, delay) {
@@ -47,4 +47,8 @@ export function useDebouncedCallback(callback, wait) {
       }
     }, wait);
   };
+}
+
+export const useForceUpdate = () => {
+  return React.useReducer(() => ({}), {})[1] // <- paste here
 }

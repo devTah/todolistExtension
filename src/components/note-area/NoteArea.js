@@ -1,5 +1,6 @@
 /**@jsx jsx */
 import { jsx, css } from "@emotion/react";
+import { useEffect } from "react";
 
 let color = {
   primary: "#11998e",
@@ -9,19 +10,19 @@ let color = {
   black: "#000",
 };
 
-function NoteArea(props) {
-  const {
-    id = 1,
-    disabled = false,
-    value,
-    defaultValue,
-    borderColor = "#91d1d3",
-    textColor = "mediumblue",
-    maxLength = 500,
-    handleChange,
-    handleKeyPress,
-    ...rest
-  } = props;
+function NoteArea({
+  id = 1,
+  disabled = false,
+  value,
+  defaultValue,
+  borderColor = "#91d1d3",
+  textColor = "mediumblue",
+  maxLength = 500,
+  handleChange,
+  handleKeyPress,
+  checkList,
+  ...props
+}) {
   const styles = {
     textareaContainer: css`
       position: relative;
@@ -90,9 +91,14 @@ function NoteArea(props) {
   const onKeyPress = (event) => {
     if (handleKeyPress) handleKeyPress(event);
   };
+
+  useEffect(() => {
+    console.log(checkList);
+  }, [checkList])
+
   return (
     <div css={styles.textareaContainer}>
-      <div className="paper-content">
+      <div className="paper-content" key={defaultValue}>
         <textarea
           autoFocus
           id={id}
@@ -102,7 +108,13 @@ function NoteArea(props) {
           onChange={onChange}
           maxLength={maxLength}
           disabled={disabled}
-          {...rest}
+          onFocus={function (e) {
+            var val = e.target.value;
+            e.target.value = '';
+            e.target.value = val;
+          }}
+          wrap="hard"
+          {...props}
         />
       </div>
     </div>

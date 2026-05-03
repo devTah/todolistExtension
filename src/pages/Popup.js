@@ -1,28 +1,33 @@
 /**@jsx jsx */
 import { jsx, css } from "@emotion/react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { formatDate } from "../common/format";
 import { useDebounce, useDebouncedCallback } from "../common/useHooks";
 import Checkbox from "../components/checkbox/Checkbox";
 import NoteArea from "../components/note-area/NoteArea";
-import { PlusIcons } from "../assets/icons/index";
-function Popup() {
+import { PlusIcons, TrashIcon } from "../assets/icons/index";
+import IconButton from "../components/IconButton";
+import Pagination from "../components/Pagination";
 
+
+function Popup() {
+  const newNote = { data: "", id: Date.now(), created: formatDate(Date.now()), checkList: [] };
   const [loading, setloading] = useState(false);
   const [note, setNote] = useState(() => {
     const data = localStorage.getItem("todolist");
-    console.log({ data });
     if (data) return JSON.parse(data);
-    return [{ data: "", id: Date.now(), created: formatDate(Date.now()) }];
+    return [newNote];
   });
 
   const [currentNote, setCurrentNote] = useState(() => {
-    const data = localStorage.getItem("todolist");
-    if (data) return JSON.parse(data[0]);
+    const data = JSON.parse(localStorage.getItem("todolist"));
+    if (data) return data[0];
     return note[0];
   });
-  console.log(currentNote);
-  const prevStateRef = useRef(note);
+  const [checkBoxData, setCheckBox] = useState({ data: [], checkList: [] });
+
+
+  const prevStateRef = useRef(currentNote);
   // const handleChange = (e) => {
   //   const value = e.target.value;
   //   setNote(value);
@@ -30,9 +35,30 @@ function Popup() {
   const handleChange = useDebouncedCallback((event) => {
     setloading(true);
     console.log(event.target.value);
-    setNote((prevState) => ({ ...prevState, data: event.target.value }));
+    setCurrentNote((prevState) => ({ ...prevState, data: event.target.value }));
   }, 1000);
-  const deboucing = useDebounce(note, 1000);
+
+
+  useEffect(() => {
+    const data = currentNote?.data.split(".\n");
+    const checkList = currentNote?.checkList ?? [];
+    setCheckBox({ checkList, data });
+  }, [currentNote]);
+
+  // useEffect(() => {
+  //   const checkList = currentNote?.checkList ?? [];
+  //   setCurrentNote((prev) => ({ ...prev, checkList }))
+  // }, [checkBoxData])
+
+  useEffect(() => {
+    const findNote = note.map((item) => {
+      if (currentNote.id === item.id) return currentNote;
+      return item;
+    });
+    setNote(findNote);
+  }, [currentNote]);
+
+  const deboucing = useDebounce(loading, 1000);
 
   const onSave = (e, cb) => {
     localStorage.setItem("todolist", JSON.stringify(e));
@@ -40,9 +66,9 @@ function Popup() {
   };
   useEffect(
     () => {
-      console.log({ note, deboucing, prevStateRef });
-      if ((note && note.data) !== prevStateRef.current.data) {
-        onSave(deboucing, () => {
+      console.log({ note, prevStateRef });
+      if ((currentNote && currentNote.data) !== prevStateRef.current.data) {
+        onSave(note, () => {
           setloading(false);
         });
       } else {
@@ -51,18 +77,60 @@ function Popup() {
     },
     [deboucing] // Only call effect if debounced search term changes
   );
+
+  const onAddNote = useCallback(() => {
+    if (note && note?.length > 4) {
+      alert("Still in development, doesn't support more than 5 pages.")
+      return false;
+    }
+    setNote((prevNote) => [...prevNote, newNote]);
+  }, [note, setNote]);
+
+  const onDelete = useCallback(() => {
+    if (note && note?.length < 2) {
+      alert("Minimun is 1 pages")
+      return false;
+    }
+    const deletedNote = (note ?? []).filter(item => item.id !== currentNote?.id);
+    localStorage.setItem("todolist", JSON.stringify(deletedNote));
+    setNote(deletedNote);
+    setCurrentNote(deletedNote[0]);
+  }, [note, setNote]);
+
+
+  const _onChange = useCallback((val) => {
+    setCurrentNote(val);
+  }, [currentNote, setCurrentNote]);
+
   return (
     <div css={style.container}>
       <div css={style.backgroundContainer}>
         <h4>Your note</h4>
         {loading && <strong>Is saving ...</strong>}
-        <PlusIcons />
-        <div css={style.box}>
-          {/* <NoteArea handleChange={handleChange} defaultValue={[note].data || ""} /> */}
+        <div style={{ marginTop: "10px" }}>
+          <strong>{currentNote?.created}</strong>
         </div>
+        <div css={style.iconButton}>
+          <IconButton onClick={onAddNote}>
+            <PlusIcons />
+          </IconButton>
+          <IconButton onClick={onDelete}>
+            <TrashIcon />
+          </IconButton>
+        </div>
+        <div css={style.box}>
+          {/* <div css={style.flex_wrap}>
+            <Checkbox checkBoxData={checkBoxData} onCheck={(val) => {
+              setCheckBox((prev) => ({ ...prev, checkList:  }));
+              setCurrentNote((prev) => ({ ...prev, checkList: prev.checkList.push(val) }))
+            }} />
+          </div> */}
+          <NoteArea handleChange={handleChange} defaultValue={currentNote.data ?? ""} checkList={checkBoxData?.checkList ?? []} />
+        </div>
+        <Pagination paging={note} currentNote={currentNote} onChange={_onChange} />
         <footer>
           @
-          <a href="#" target="_blank">
+          <a href="mailto:devtahuy@gmail.com" target="_blank">
             devTah
           </a>
         </footer>
@@ -78,6 +146,16 @@ const style = {
     height: 100%;
     display: flex;
     justify-content: center;
+  `,
+  iconButton: css`
+  width: 90%;
+  align-self: flex-end;
+  display: flex;
+  justify-content: space-between;
+  `,
+  flex_wrap: css`
+    flex-wrap: wrap;
+    width: 8%;
   `,
   backgroundContainer: css`
     width: 100%;
@@ -101,6 +179,7 @@ const style = {
       font-size: 42px;
       letter-spacing: -2px;
       text-align: left;
+      line-height: 0;
     }
     @media only screen and (min-width: 768px) {
       /* For desktop: */
@@ -160,5 +239,7 @@ const style = {
     overflow-x: hidden;
     overflow-y: auto;
     position: relative;
+    display: flex;
+    flex-direction: row;
   `,
 };
